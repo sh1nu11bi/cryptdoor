@@ -8,6 +8,18 @@ Keylogging is also implemented for windows using pyHook and the keystrokes are t
 All communications apart from ones meterpreter makes are encrypted with AES.
 On top of this the script itself is encrypted with AES and decrypts itself in memory (taken from pyherion).
 
+Usage
+=========
+
+cryptdoor.py will make the backdoor and server.
+The syntax is:
+
+	./cryptdoor.py host port (backdoorname) (servername)
+
+host and port refer to the host and port of the listening server.
+If you don't include backdoorname and servername, files will be named backdoor.py and server.py.
+
+
  AEShell options:
   download filepath   -  Download a file from remote system to pwd
   upload filepath     -  Upload a file to remote pwd
