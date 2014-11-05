@@ -31,3 +31,4 @@ If you don't include backdoorname and servername, files will be named backdoor.p
 	  keydump             -  Dump recorded keystrokes
 	  keyclear            -  Clear the keystroke buffer
 	  chromepass          -  Retrieve chrome stored passwords.
+	  screenshot	      -  Take a screenshot.
