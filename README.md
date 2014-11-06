@@ -20,15 +20,16 @@ host and port refer to the host and port of the listening server.
 If you don't include backdoorname and servername, files will be named backdoor.py and server.py.
 
 
-	 AES-shell options:
-	  download file       -  Download a file from remote pwd to localhost
-	  upload filepath     -  Upload a file to remote pwd
-	  run commands        -  Run a command in the background
+	AES-shell options:
+    	 download file       -  Download a file from remote pwd to localhost.
+    	 upload filepath     -  Upload a filepath to remote pwd.
+    	 run commands        -  Run a command in the background.
 
-	 Windows Only:
-	  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port
-	  keyscan             -  Start recording keystrokes
-	  keydump             -  Dump recorded keystrokes
-	  keyclear            -  Clear the keystroke buffer
-	  chromepass          -  Retrieve chrome stored passwords.
-	  screenshot	      -  Take a screenshot.
+	Windows Only:
+    	 persistence         -  Install to %TEMP% and create a startup registry.
+    	 meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port.
+    	 keyscan             -  Start recording keystrokes.
+    	 keydump             -  Dump recorded keystrokes.
+    	 keyclear            -  Clear the keystroke buffer.
+    	 chromepass          -  Retrieve chrome stored passwords.
+    	 screenshot          -  Take a screenshot.
